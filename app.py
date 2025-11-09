@@ -1,18 +1,16 @@
 import os
-import psycopg2
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import requests
+from supabase import create_client
 
 # --- Flask App Configuration ---
 app = Flask(__name__, template_folder='.')
 
-# --- Database Configuration ---
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-def get_db():
-    """Connect to Supabase PostgreSQL."""
-    return psycopg2.connect(DATABASE_URL, sslmode='require')
+# --- Supabase Configuration ---
+SUPABASE_URL = "https://nirfwbsweyurafpifkst.supabase.co"
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")  # Add this in Render env
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- Helper: Geolocation ---
 def get_geolocation(ip_address):
@@ -33,7 +31,6 @@ def get_geolocation(ip_address):
     return "Location not found"
 
 # --- Routes ---
-
 @app.route('/')
 def index():
     """Homepage to start the greeting chain."""
@@ -52,23 +49,12 @@ def greet():
 @app.route('/dashboard')
 def dashboard():
     """Dashboard showing all greetings."""
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT id, sender_name, receiver_name, timestamp, location FROM greetings ORDER BY timestamp DESC")
-    rows = cur.fetchall()
-    greetings = [
-        {
-            "id": r[0],
-            "sender_name": r[1],
-            "receiver_name": r[2],
-            "timestamp": r[3],
-            "location": r[4]
-        } for r in rows
-    ]
-    cur.execute("SELECT COUNT(*) FROM greetings")
-    total = cur.fetchone()[0]
-    cur.close()
-    conn.close()
+    response = supabase.table("greetings").select("*").order("timestamp", desc=True).execute()
+    greetings = response.data or []
+
+    total_response = supabase.table("greetings").select("id").execute()
+    total = len(total_response.data or [])
+
     return render_template('dashboard.html', greetings=greetings, total=total)
 
 @app.route('/api/submit', methods=['POST'])
@@ -86,15 +72,14 @@ def submit_greeting():
     location = get_geolocation(ip_address)
     user_agent = request.headers.get("User-Agent")
 
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO greetings (sender_name, receiver_name, timestamp, ip_address, location, user_agent)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (sender_name, receiver_name, timestamp, ip_address, location, user_agent))
-    conn.commit()
-    cur.close()
-    conn.close()
+    supabase.table("greetings").insert({
+        "sender_name": sender_name,
+        "receiver_name": receiver_name,
+        "timestamp": str(timestamp),
+        "ip_address": ip_address,
+        "location": location,
+        "user_agent": user_agent
+    }).execute()
 
     next_link = url_for('greet', _external=True, sender=receiver_name)
     return jsonify({"message": "Greeting sent successfully!", "next_link": next_link})
