@@ -2,15 +2,22 @@ import os
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import requests
-from supabase import create_client
+import json
 
 # --- Flask App Configuration ---
 app = Flask(__name__, template_folder='.')
 
 # --- Supabase Configuration ---
 SUPABASE_URL = "https://nirfwbsweyurafpifkst.supabase.co"
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")  # Add this in Render env
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_TABLE = "greetings"
+
+HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+}
 
 # --- Helper: Geolocation ---
 def get_geolocation(ip_address):
@@ -49,12 +56,11 @@ def greet():
 @app.route('/dashboard')
 def dashboard():
     """Dashboard showing all greetings."""
-    response = supabase.table("greetings").select("*").order("timestamp", desc=True).execute()
-    greetings = response.data or []
+    url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}?select=*&order=timestamp.desc"
+    response = requests.get(url, headers=HEADERS)
+    greetings = response.json() if response.status_code == 200 else []
 
-    total_response = supabase.table("greetings").select("id").execute()
-    total = len(total_response.data or [])
-
+    total = len(greetings)
     return render_template('dashboard.html', greetings=greetings, total=total)
 
 @app.route('/api/submit', methods=['POST'])
@@ -67,19 +73,26 @@ def submit_greeting():
     if not receiver_name:
         return jsonify({"error": "Receiver name is required."}), 400
 
-    timestamp = datetime.utcnow()
+    timestamp = datetime.utcnow().isoformat()
     ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
     location = get_geolocation(ip_address)
     user_agent = request.headers.get("User-Agent")
 
-    supabase.table("greetings").insert({
+    # Insert into Supabase
+    payload = {
         "sender_name": sender_name,
         "receiver_name": receiver_name,
-        "timestamp": str(timestamp),
+        "timestamp": timestamp,
         "ip_address": ip_address,
         "location": location,
         "user_agent": user_agent
-    }).execute()
+    }
+
+    url = f"{SUPABASE_URL}/rest/v1/{SUPABASE_TABLE}"
+    response = requests.post(url, headers=HEADERS, data=json.dumps(payload))
+
+    if response.status_code not in (200, 201):
+        return jsonify({"error": "Failed to save greeting."}), 500
 
     next_link = url_for('greet', _external=True, sender=receiver_name)
     return jsonify({"message": "Greeting sent successfully!", "next_link": next_link})
