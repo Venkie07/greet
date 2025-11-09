@@ -32,16 +32,22 @@
             background-color: #feb47b;
             border-color: #feb47b;
         }
+        label.form-label {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card p-4 shadow">
             <h2 class="text-center mb-3">Hey there!</h2>
-            <p class="text-center fs-5 mb-4">I, <strong>{{ sender_name }}</strong>, shared this with you because I like you. Share this with someone you love. ❤️</p>
+            <p class="text-center fs-5 mb-4">
+                I, <strong>{{ sender_name }}</strong>, shared this with you because you are special to me.  
+                Small gestures can brighten our day, and I wanted to send a little warmth and love your way.  
+                Now it’s your turn to continue the chain — share this with someone you care about and spread the happiness. ❤️
+            </p>
             <form id="greeting-form">
                 <div class="mb-3">
-                    <label for="name" class="form-label">Enter your name to continue the chain:</label>
                     <input type="text" class="form-control" id="name" placeholder="Your Name" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Send Greeting & Get Your Link</button>
@@ -58,6 +64,7 @@
     </div>
 
     <script>
+        // Handle form submission
         document.getElementById('greeting-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const receiverName = document.getElementById('name').value;
@@ -78,10 +85,10 @@
             }
         });
 
+        // WhatsApp share button
         document.getElementById('share-btn').addEventListener('click', () => {
             const link = document.getElementById('share-link').value;
-            const senderName = '{{ sender_name }}';
-            const message = `Hey! there you are choose one by ${senderName}`;
+            const message = `Hey! I just wanted to share this with you because it made me think of you. Sometimes small gestures can brighten our day, and I hope this brings a smile to your face. 💖`;
             const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message + ' ' + link)}`;
             window.open(whatsappUrl, '_blank');
         });
