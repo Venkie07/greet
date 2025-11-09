@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greetings Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            font-family: 'Arial', sans-serif;
+        }
+        .container { max-width: 960px; }
+        .card {
+            border: none;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2 text-white">Greetings Dashboard</h1>
+            <span class="badge bg-light text-dark rounded-pill fs-5">Total Greetings: {{ total }}</span>
+        </div>
+        
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                                <th>Timestamp (UTC)</th>
+                                <th>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for greeting in greetings %}
+                            <tr>
+                                <td>{{ greeting.id }}</td>
+                                <td>{{ greeting.sender_name or 'N/A (First User)' }}</td>
+                                <td>{{ greeting.receiver_name }}</td>
+                                <td>{{ greeting.timestamp }}</td>
+                                <td>{{ greeting.location }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center">No greetings yet!</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

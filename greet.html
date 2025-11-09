@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Greeting For You!</title>
+    
+    <!-- Meta Tags for Social Sharing -->
+    <meta property="og:title" content="A Greeting from {{ sender_name }}!" />
+    <meta property="og:description" content="Click the link to continue the greeting chain." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ share_url }}" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            font-family: 'Arial', sans-serif;
+        }
+        .card {
+            max-width: 500px;
+            margin: 5rem auto;
+            border: none;
+            border-radius: 15px;
+        }
+        .share-link-container { display: none; }
+        .btn-primary {
+            background-color: #ff7e5f;
+            border-color: #ff7e5f;
+        }
+        .btn-primary:hover {
+            background-color: #feb47b;
+            border-color: #feb47b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card p-4 shadow">
+            <h2 class="text-center mb-3">Hey there!</h2>
+            <p class="text-center fs-5 mb-4">I, <strong>{{ sender_name }}</strong>, shared this with you because I like you. Share this with someone you love. ❤️</p>
+            <form id="greeting-form">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Enter your name to continue the chain:</label>
+                    <input type="text" class="form-control" id="name" placeholder="Your Name" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Send Greeting & Get Your Link</button>
+            </form>
+
+            <div id="share-link-container" class="mt-4 text-center share-link-container">
+                <h5 class="text-success">Awesome! Now share this new link with your friends:</h5>
+                <div class="input-group">
+                    <input type="text" id="share-link" class="form-control" readonly>
+                    <button class="btn btn-success" id="share-btn">Share on WhatsApp</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('greeting-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const receiverName = document.getElementById('name').value;
+            const senderName = '{{ sender_name }}';
+
+            const response = await fetch('/api/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ receiver_name: receiverName, sender_name: senderName })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                document.getElementById('share-link').value = result.next_link;
+                document.getElementById('share-link-container').style.display = 'block';
+                document.getElementById('greeting-form').style.display = 'none';
+            }
+        });
+
+        document.getElementById('share-btn').addEventListener('click', () => {
+            const link = document.getElementById('share-link').value;
+            const senderName = '{{ sender_name }}';
+            const message = `Hey! there you are choose one by ${senderName}`;
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message + ' ' + link)}`;
+            window.open(whatsappUrl, '_blank');
+        });
+    </script>
+</body>
+</html>
