@@ -206,10 +206,30 @@
             margin-left: auto;
         }
 
+        #navbar-date {
+            color: var(--p-400);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            margin-left: 600px;
+        }
+
         @media (max-width: 600px) {
             #navbar-clock {
-                font-size: 0.9rem;
+                font-size: 0.8rem;
                 padding: 4px 10px;
+            }
+
+            #navbar-date {
+                font-size: 0.8rem;
+                padding: 4px 10px;
+                margin-left: auto;
             }
 
             .logo-text {
@@ -234,6 +254,7 @@
                         style="font-size: 0.7em; margin-bottom: 10px; margin-left: 6px;"><span
                             class="floating-version-mini">3.0</span></sup></div>
             </a>
+            <div id="navbar-date">00/00/0000</div>
             <div id="navbar-clock">00:00:00</div>
         </div>
     </nav>
@@ -266,7 +287,6 @@
 
                 <div class="timer-controls">
                     <button id="initiate-btn" class="control-btn">INITIATE</button>
-                    <button id="reset-btn" class="control-btn secondary">RESET</button>
                 </div>
             </div>
         </section>
@@ -275,6 +295,9 @@
     <script src="script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+
+            /* ================= TIMER ================= */
+
             const initialSeconds = 24 * 60 * 60;
             let currentSeconds = initialSeconds;
             let timerInterval = null;
@@ -285,8 +308,8 @@
             const secondsEl = document.getElementById('seconds');
             const progressFill = document.getElementById('countdown-progress-fill');
             const initiateBtn = document.getElementById('initiate-btn');
-            const resetBtn = document.getElementById('reset-btn');
             const missionStatus = document.getElementById('mission-status');
+            const controls = document.querySelector('.timer-controls'); // whole button panel
 
             function updateUI() {
                 const hrs = Math.floor(currentSeconds / 3600);
@@ -307,8 +330,7 @@
                     clearInterval(timerInterval);
                     timerInterval = null;
                     isRunning = false;
-                    initiateBtn.innerText = 'COMPLETED';
-                    initiateBtn.disabled = true;
+
                     missionStatus.innerText = 'ACCOMPLISHED';
                     missionStatus.style.color = 'var(--p-500)';
                     return;
@@ -318,54 +340,65 @@
                 currentSeconds--;
             }
 
+            // INITIATE → start timer + hide ALL buttons forever
             initiateBtn.addEventListener('click', () => {
                 if (!isRunning) {
                     timerInterval = setInterval(updateTimer, 1000);
                     isRunning = true;
-                    initiateBtn.innerText = 'PAUSE';
-                    initiateBtn.className = 'control-btn pause';
+
                     missionStatus.innerText = 'ACTIVE';
                     missionStatus.style.color = 'var(--p-400)';
-                } else {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    isRunning = false;
-                    initiateBtn.innerText = 'RESUME';
-                    initiateBtn.className = 'control-btn';
-                    missionStatus.innerText = 'PAUSED';
+
+                    controls.style.display = 'none'; // 🔥 hide INITIATE + RESET
                 }
             });
 
-            resetBtn.addEventListener('click', () => {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                isRunning = false;
-                currentSeconds = initialSeconds;
-
-                updateUI();
-                initiateBtn.innerText = 'INITIATE';
-                initiateBtn.className = 'control-btn';
-                initiateBtn.disabled = false;
-                missionStatus.innerText = 'STANDBY';
-                missionStatus.style.color = '';
-            });
-
             updateUI();
+
+
+            /* ================= NAVBAR CLOCK ================= */
+
+            function updateNavbarClock() {
+                const now = new Date();
+
+                let hrs = now.getHours();
+                const mins = String(now.getMinutes()).padStart(2, '0');
+                const secs = String(now.getSeconds()).padStart(2, '0');
+
+                const ampm = hrs >= 12 ? 'PM' : 'AM';
+
+                hrs = hrs % 12;
+                hrs = hrs ? hrs : 12;
+                hrs = String(hrs).padStart(2, '0');
+
+                const clockEl = document.getElementById('navbar-clock');
+                if (clockEl) {
+                    clockEl.textContent = `${hrs}:${mins}:${secs} ${ampm}`;
+                }
+            }
+
+            setInterval(updateNavbarClock, 1000);
+            updateNavbarClock();
+
+
+            /* ================= NAVBAR DATE ================= */
+
+            function updateNavbarDate() {
+                const now = new Date();
+
+                const day = String(now.getDate()).padStart(2, '0');
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const year = now.getFullYear();
+
+                const dateEl = document.getElementById('navbar-date');
+                if (dateEl) {
+                    dateEl.textContent = `${day}/${month}/${year}`;
+                }
+            }
+
+            updateNavbarDate(); // updates once (date changes daily)
         });
 
-        // Real-time Navbar Clock
-        function updateNavbarClock() {
-            const now = new Date();
-            const hrs = String(now.getHours()).padStart(2, '0');
-            const mins = String(now.getMinutes()).padStart(2, '0');
-            const secs = String(now.getSeconds()).padStart(2, '0');
-            const clockEl = document.getElementById('navbar-clock');
-            if (clockEl) {
-                clockEl.textContent = `${hrs}:${mins}:${secs}`;
-            }
-        }
-        setInterval(updateNavbarClock, 1000);
-        updateNavbarClock();
     </script>
 </body>
 
